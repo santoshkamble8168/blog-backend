@@ -1,16 +1,11 @@
 const {Post} = require("../models")
+const {AsyncErrorHandler} = require("../middlewares")
+const {ErrorHandler} = require("../utils")
 
-exports.createPost = async(req,res) => {
-    try {
-        const post = await Post.create(req.body);
-        res.status(200).json({
-          success: true,
-          item: post,
-        });
-    } catch (error) {
-        res.status(500).json({
-          success: false,
-          error: error.message
-        });
-    }
-}
+exports.createPost = AsyncErrorHandler(async (req, res) => {
+  const post = await Post.create(req.body);
+  res.status(200).json({
+    success: true,
+    item: post,
+  });
+});
