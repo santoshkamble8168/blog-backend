@@ -2,5 +2,6 @@ module.exports = {
     config: require("./commonConfigs"),
     dbConnect: require("./db"),
     postConfig: require("./postConfigs"),
-    userCofig: require("./userConfig")
+    userConfig: require("./userConfig"),
+    messages: require("./messages")
 }

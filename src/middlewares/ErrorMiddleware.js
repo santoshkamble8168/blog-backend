@@ -1,4 +1,5 @@
 const {ErrorHandler} = require("../utils")
+const {config} = require("../config")
 
 module.exports = (err, req, res, next) => {
     err.statusCode = err.statusCode || 500
@@ -30,7 +31,7 @@ module.exports = (err, req, res, next) => {
 
     //if envrionment is dev show Error stack
     let stack = undefined;
-    if (process.env.NODE_ENV === "dev") {
+    if (config.nodeENV === "dev") {
         stack = err.stack
     }
 

@@ -1,3 +1,4 @@
 module.exports = {
-    roles: ["user", "admin"]
+    roles: ["user", "admin"],
+    status:["pending", "active", "deactive"]
 }
