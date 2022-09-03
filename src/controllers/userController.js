@@ -100,9 +100,13 @@ exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
   });
 });
 
-exports.getUser = AsyncErrorHandler(async (req, res) => {
+exports.getUser = AsyncErrorHandler(async (req, res, next) => {
   const id = req.params.id;
-  const user = await User.findById(id);
+  if (!id) return next(new ErrorHandler("User Id not provided", 404));
+
+  const user = await Check.isExist(User, id);
+  if (!user) return next(new ErrorHandler("user not found", 404));
+
   res.status(200).json({
     success: true,
     item: user,
