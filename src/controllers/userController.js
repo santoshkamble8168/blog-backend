@@ -2,7 +2,7 @@ const { User } = require("../models");
 const { AsyncErrorHandler } = require("../middlewares");
 const { ErrorHandler, Check } = require("../utils");
 const { userValidation } = require("../validations");
-const { messages } = require("../config");
+const { messages, userConfig } = require("../config");
 
 exports.createUser = AsyncErrorHandler(async (req, res, next) => {
   const { error } = userValidation.createUser(req);
@@ -90,13 +90,108 @@ exports.deleteUser = AsyncErrorHandler(async (req, res, next) => {
 });
 
 exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
-  //pagination
+  const { search, status, sortBy = "createdAt", sortOrder = "desc", role = userConfig.roles[0] } = req.query;
+  /*
   //searching
+  let query = {};
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+    ];
+  }
   //filters++
-  const users = await User.find();
+  if (status) {
+    query.status = status
+  }
+  if (role) {
+    query.role = role;
+  }
+  const users = await User.find(query).limit(limit).skip(limit * page)*/
+
+  let query = [];
+
+  //isDeleted remove from query
+  query.push({
+    $match: {
+      isDeleted: false,
+    },
+  });
+  
+  if (search && search !== "") {
+    query.push({
+      $match: {
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ],
+      },
+    });
+  }
+
+  if (status) {
+    query.push({
+      $match: {
+        status: status,
+      },
+    });
+  }
+
+  if (role) {
+    query.push({
+      $match: {
+        role: role,
+      },
+    });
+  }
+
+  if (sortBy && sortOrder) {
+    let sort = {}
+    sort[sortBy] = (sortOrder === "asc") ? 1 : -1
+    query.push({
+      $sort: sort
+    })
+  }
+
+
+  const total = await User.countDocuments(query);
+  const page = req.query.page ? parseInt(req.query.page) : 1;
+  const limit = req.query.limit ? parseInt(req.query.limit) : 3;
+  const skip = (page - 1) * limit;
+  
+  query.push({
+    $skip: skip,
+  });
+  
+  query.push({
+    $limit: limit,
+  });
+  
+  //project
+  query.push({
+    $project: {
+      _id: 1,
+      role: 1,
+      name: 1,
+      email: 1,
+      avatar: 1,
+      status: 1,
+      createdAt: 1
+    },
+  });
+  const users = await User.aggregate(query);
+
   res.status(200).json({
     success: true,
-    item: users,
+    item: {
+      users,
+      meta: {
+        total: total,
+        currentPage: page,
+        perPage: limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    },
   });
 });
 
