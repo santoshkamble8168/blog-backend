@@ -15,4 +15,11 @@ module.exports = {
     provideValidEmail: "Please provide valid email",
     emailPasswordIncorrect: "Email or possword is incorrect!",
   },
+  category: {
+    idNotProvided: "category Id not provided",
+    alredyExist: "Category already exist",
+    notExist: "Category not exist",
+    update: "category updated successfully!",
+    delete: "category deleted successfully!",
+  },
 };

@@ -36,6 +36,16 @@ const postSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId, 
+    ref:"User",
+    required: true
+  },
+  categoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref:"Category",
+    required: true
+  }
 }, {
     timestamps: true
 });

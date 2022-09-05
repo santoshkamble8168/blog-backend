@@ -2,7 +2,7 @@ const { User } = require("../models");
 const { AsyncErrorHandler } = require("../middlewares");
 const { ErrorHandler, Check } = require("../utils");
 const { userValidation } = require("../validations");
-const { messages, userConfig } = require("../config");
+const { messages, userConfig, config } = require("../config");
 
 exports.createUser = AsyncErrorHandler(async (req, res, next) => {
   const { error } = userValidation.createUser(req);
@@ -156,7 +156,9 @@ exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
 
   const total = await User.countDocuments(query);
   const page = req.query.page ? parseInt(req.query.page) : 1;
-  const limit = req.query.limit ? parseInt(req.query.limit) : 3;
+  const limit = req.query.limit
+    ? parseInt(req.query.limit)
+    : parseInt(config.pageLimit);
   const skip = (page - 1) * limit;
   
   query.push({

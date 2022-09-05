@@ -19,5 +19,6 @@ module.exports = {
   jwtSecret: process.env.JWT_SECRET,
   jwtExpire: process.env.JWT_EXPIRE,
   cookieExpire: process.env.COOKIE_EXPIRE,
-  resetPasswordURL: process.env.PASSWORD_RESET_URI
+  resetPasswordURL: process.env.PASSWORD_RESET_URI,
+  pageLimit: process.env.PAGE_LIMIT,
 };
