@@ -20,4 +20,17 @@ const categorySchema = new mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model("Category", categorySchema)
+const categoryModal = mongoose.model("Category", categorySchema);
+module.exports = categoryModal;
+
+//Uncategorized - default cagtegory
+categoryModal.findOne({ name: "Uncategorized" }, function (err, user) {
+  if (!user) {
+    var category = new categoryModal({
+      name: "Uncategorized"
+    });
+    category.save((cat) => {
+      console.log("Uncategorized categoty CREATED--------------------");
+    });
+  }
+});

@@ -11,7 +11,7 @@ exports.verifyToken = AsyncErrorHandler(async (req, res, next) => {
 
   const decodedToken = tokens.decodeJwtToken(token);
 
-  req.user = await User.findById(decodedToken.id);
+  req.user = await User.findById(decodedToken._id);
 
   next();
 });

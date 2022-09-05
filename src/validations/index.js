@@ -1,4 +1,5 @@
 module.exports = {
     userValidation: require("./userValidation"),
-    categoryValidation: require("./categoryValidation")
+    categoryValidation: require("./categoryValidation"),
+    postValidation: require("./postValidation")
 }
