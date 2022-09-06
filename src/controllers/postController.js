@@ -3,69 +3,86 @@ const {AsyncErrorHandler} = require("../middlewares")
 const {ErrorHandler, Check} = require("../utils");
 const { postValidation } = require("../validations");
 const { default: mongoose } = require("mongoose");
-const {config} = require("../config")
+const {config, messages} = require("../config")
 
 exports.createPost = AsyncErrorHandler(async (req, res, next) => {
   const { error } = postValidation.createPost(req);
   if (error) return next(new ErrorHandler(error.details, 409));
 
   const isExist = await Check.isExist(Post, { title: req.body.title });
-  if (isExist) return next(new ErrorHandler("Title already exist", 409));
-  
+  if (isExist) return next(new ErrorHandler(messages.post.titleExist, 409));
+
   const newPost = new Post({
     title: req.body.title,
     description: req.body.description,
     content: req.body.content,
     categoryId: req.body.categoryId,
-    userId: req.user._id
+    createdBy: req.user._id,
   });
 
   const post = await newPost.save()
   res.status(200).json({
     success: true,
+    message: messages.post.create,
     item: post,
   });
 });
 
 exports.updatePost = AsyncErrorHandler(async (req, res, next) => {
   const id = req.params.id
-  if(!id) return next(new ErrorHandler("Please provide post id", 404))
+  if(!id) return next(new ErrorHandler(messages.post.idNotProvided, 404))
 
   const isExist = await Check.isExist(Post, id)
-  if(!isExist) return next(new ErrorHandler("Post not found", 404))
+  if(!isExist) return next(new ErrorHandler(messages.post.notExist, 404))
+
+  //self or admin can update the post
+  if (isExist.createdBy.toString() !== req.user._id.toString() || !req.user?.isAdmin) 
+    return next(new ErrorHandler(messages.post.notAuthorized, 401));
 
   const updatePostFields = {
     title: req.body.title,
     description: req.body.description,
     content: req.body.content,
     categoryId: req.body.categoryId,
-    userId: req.user._id,
-  }
+    updatedBy: req.user._id,
+  };
 
-  const updatedPost = await Post.updateOne(
+  const updatedPost = await Post.findByIdAndUpdate(
     id,
     {
-      $set: updatePostFields
+      $set: updatePostFields,
     },
-    {new: true}
-  );
+    { new: true }
+  )
+    .populate("createdBy")
+    .populate("updatedBy")
+    .populate("categoryId")
 
   res.status(200).json({
     success: true,
-    message: "Post updated",
+    message: messages.post.update,
     item: updatedPost,
   });
 });
 
 exports.deletePost = AsyncErrorHandler(async (req, res) => {
   const id = req.params.id;
-  if (!id) return next(new ErrorHandler("Please provide post id", 404));
+  if (!id) return next(new ErrorHandler(messages.post.idNotProvided, 404));
+
+  const isExist = await Check.isExist(Post, id);
+  if (!isExist) return next(new ErrorHandler(messages.post.notExist, 404));
+
+  //self or admin can update the post
+  if (isExist.createdBy.toString() !== req.user._id.toString() || !req.user?.isAdmin)
+    return next(new ErrorHandler(messages.post.notAuthorized, 401));
 
   const post = await Post.findByIdAndDelete(id);
 
+//delete comments as well
+
   res.status(200).json({
     success: true,
-    message: "Post deleted successfully!",
+    message: messages.post.delete,
   });
 });
 
@@ -86,7 +103,7 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res) => {
     {
       $lookup: {
         from: "users",
-        localField: "userId",
+        localField: "createdBy",
         foreignField: "_id",
         as: "user",
       },
@@ -97,16 +114,14 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res) => {
   );
 
   //lookup for category
-  query.push(
-    {
-      $lookup: {
-        from: "categories",
-        localField: "categoryId",
-        foreignField: "_id",
-        as: "category",
-      },
-    }
-  );
+  query.push({
+    $lookup: {
+      from: "categories",
+      localField: "categoryId",
+      foreignField: "_id",
+      as: "category",
+    },
+  });
 
   if (search && search !== "") {
     query.push({
@@ -139,7 +154,7 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res) => {
   if (userId) {
     query.push({
       $match: {
-        "userId": mongoose.Types.ObjectId(userId),
+        userId: mongoose.Types.ObjectId(userId),
       },
     });
   }
@@ -168,18 +183,30 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res) => {
     $limit: limit,
   });
 
-
   //project
   query.push({
     $project: {
-      categoryId: 0,
-      userId: 0,
-      "user.password": 0,
-      "user.isDeleted": 0,
-      "user.resetPassword": 0,
-      "user.verifyEmail": 0,
+      _id: 1,
+      slug: 1,
+      type: 1,
+      title: 1,
+      content: 1,
+      status: 1,
+      featuredImage: 1,
+      createdAt: 1,
+      "user._id": 1,
+      "user.role": 1,
+      "user.name": 1,
+      "user.email": 1,
+      "user.avatar": 1,
+      "category._id": 1,
+      "category.name": 1,
+      "category.createdAt": 1,
+      "category.slug": 1,
+      comments: { $size: {"$ifNull" : ["$commentId", []]} },
     },
   });
+
   const posts = await Post.aggregate(query);
 
   res.status(200).json({
@@ -198,16 +225,127 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res) => {
 
 exports.getSinglePost = AsyncErrorHandler(async (req, res) => {
   const id = req.params.id;
-  if (!id) return next(new ErrorHandler("Post Id not provided", 404));
-  
-  const isId = mongoose.Types.ObjectId.isValid(id)
-  const query = isId ? id : {slug: id}
+  if (!id) return next(new ErrorHandler(messages.post.idNotProvided, 404));
 
-  const post = await Check.isExist(Post, query);
-  if (!post) return next(new ErrorHandler("Post not found", 404));
+  const isId = mongoose.Types.ObjectId.isValid(id);
+  const post_ID_Slug = isId ? id : { slug: id };
+
+  const isPostExist = await Check.isExist(Post, post_ID_Slug);
+  if (!isPostExist)
+    return next(new ErrorHandler(messages.post.idNotProvided, 404));
+
+  const query = [];
+
+  query.push({
+    $match: {
+      _id: mongoose.Types.ObjectId(id),
+    },
+  });
+
+  //lookup for users
+  query.push(
+    {
+      $lookup: {
+        from: "users",
+        localField: "createdBy",
+        foreignField: "_id",
+        as: "createdBy",
+      },
+    },
+    {
+      $unwind: "$createdBy",
+    }
+  );
+
+  //preserveNullAndEmptyArrays -> if field is empty or notExist it handle
+  query.push(
+    {
+      $lookup: {
+        from: "users",
+        localField: "updatedBy",
+        foreignField: "_id",
+        as: "updatedBy",
+      },
+    },
+    {
+      $unwind: {
+        path: "$updatedBy",
+        preserveNullAndEmptyArrays: true,
+      },
+    }
+  );
+
+  //lookup for category
+  query.push({
+    $lookup: {
+      from: "categories",
+      localField: "categoryId",
+      foreignField: "_id",
+      as: "category",
+    },
+  });
+
+  //lookup for comments
+  query.push({
+    $lookup: {
+      from: "comments",
+      localField: "commentId",
+      foreignField: "_id",
+      as: "comments",
+    },
+  });
+
+  // query.push(
+  //   {
+  //     $lookup: {
+  //       from: "users",
+  //       localField: "comments.userId",
+  //       foreignField: "_id",
+  //       as: "comments.user",
+  //     },
+  //   },
+  //   //{ $unwind: "$comments.user" }
+  // );
+
+  // query.push({
+  //   $lookup: {
+  //     from: "users",
+  //     localField: "comments.userId",
+  //     foreignField: "_id",
+  //     as: "userrr",
+  //   },
+  // });
+
+  //project
+  query.push({
+    $project: {
+      _id: 1,
+      type: 1,
+      title: 1,
+      content: 1,
+      status: 1,
+      featuredImage: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      "createdBy._id": 1,
+      "createdBy.role": 1,
+      "createdBy.name": 1,
+      "createdBy.email": 1,
+      "createdBy.avatar": 1,
+      "creaupdatedBytedBy._id": 1,
+      "updatedBy.role": 1,
+      "updatedBy.name": 1,
+      "updatedBy.email": 1,
+      "updatedBy.avatar": 1,
+      category: 1,
+      comments: 1,
+    },
+  });
+
+  const post = await Post.aggregate(query);
 
   res.status(200).json({
     success: true,
-    item: post,
+    item: post[0],
   });
 });

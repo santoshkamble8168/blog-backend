@@ -22,4 +22,22 @@ module.exports = {
     update: "category updated successfully!",
     delete: "category deleted successfully!",
   },
+  post: {
+    titleExist: "Title already exist",
+    idNotProvided: "post Id not provided",
+    alredyExist: "post already exist",
+    notExist: "post not exist",
+    create: "post created successfully!",
+    update: "post updated successfully!",
+    delete: "post deleted successfully!",
+    notAuthorized: "Not authorized to update this post",
+  },
+  comment: {
+    idNotProvided: "comment Id not provided",
+    notExist: "comment not exist",
+    create: "comment created successfully!",
+    update: "comment updated successfully!",
+    delete: "comment deleted successfully!",
+    notAuthorized: "Not authorized to update this comment",
+  },
 };
