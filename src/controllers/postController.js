@@ -1,4 +1,4 @@
-const {Post} = require("../models")
+const {Post, Comment} = require("../models")
 const {AsyncErrorHandler} = require("../middlewares")
 const {ErrorHandler, Check} = require("../utils");
 const { postValidation } = require("../validations");
@@ -78,7 +78,8 @@ exports.deletePost = AsyncErrorHandler(async (req, res) => {
 
   const post = await Post.findByIdAndDelete(id);
 
-//delete comments as well
+  //delete comments as well
+  await Comment.deleteMany({ postId: id });
 
   res.status(200).json({
     success: true,
@@ -86,7 +87,7 @@ exports.deletePost = AsyncErrorHandler(async (req, res) => {
   });
 });
 
-exports.getAllPosts = AsyncErrorHandler(async (req, res) => {
+exports.getAllPosts = AsyncErrorHandler(async (req, res, next) => {
   const {
     search,
     status,
@@ -223,7 +224,7 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res) => {
   });
 });
 
-exports.getSinglePost = AsyncErrorHandler(async (req, res) => {
+exports.getSinglePost = AsyncErrorHandler(async (req, res, next) => {
   const id = req.params.id;
   if (!id) return next(new ErrorHandler(messages.post.idNotProvided, 404));
 
@@ -232,7 +233,7 @@ exports.getSinglePost = AsyncErrorHandler(async (req, res) => {
 
   const isPostExist = await Check.isExist(Post, post_ID_Slug);
   if (!isPostExist)
-    return next(new ErrorHandler(messages.post.idNotProvided, 404));
+    return next(new ErrorHandler(messages.post.notExist, 404));
 
   const query = [];
 
@@ -295,6 +296,30 @@ exports.getSinglePost = AsyncErrorHandler(async (req, res) => {
     },
   });
 
+  // query.push({
+  //   $lookup: {
+  //     from: "users",
+  //     localField: "comments.createdBy",
+  //     foreignField: "_id",
+  //     as: "userr",
+  //   },
+  // });
+
+  // query.push({
+  //   $lookup: {
+  //     from: "users",
+  //     as: "comm",
+  //     let: { user_id: "$commentId" },
+  //     pipeline: [
+  //       {
+  //         $match: {
+  //           $expr: { $eq: ["$_id", "$$user_id"] },
+  //         },
+  //       },
+  //     ],
+  //   },
+  // });
+
   // query.push(
   //   {
   //     $lookup: {
@@ -317,30 +342,30 @@ exports.getSinglePost = AsyncErrorHandler(async (req, res) => {
   // });
 
   //project
-  query.push({
-    $project: {
-      _id: 1,
-      type: 1,
-      title: 1,
-      content: 1,
-      status: 1,
-      featuredImage: 1,
-      createdAt: 1,
-      updatedAt: 1,
-      "createdBy._id": 1,
-      "createdBy.role": 1,
-      "createdBy.name": 1,
-      "createdBy.email": 1,
-      "createdBy.avatar": 1,
-      "creaupdatedBytedBy._id": 1,
-      "updatedBy.role": 1,
-      "updatedBy.name": 1,
-      "updatedBy.email": 1,
-      "updatedBy.avatar": 1,
-      category: 1,
-      comments: 1,
-    },
-  });
+  // query.push({
+  //   $project: {
+  //     _id: 1,
+  //     type: 1,
+  //     title: 1,
+  //     content: 1,
+  //     status: 1,
+  //     featuredImage: 1,
+  //     createdAt: 1,
+  //     updatedAt: 1,
+  //     "createdBy._id": 1,
+  //     "createdBy.role": 1,
+  //     "createdBy.name": 1,
+  //     "createdBy.email": 1,
+  //     "createdBy.avatar": 1,
+  //     "creaupdatedBytedBy._id": 1,
+  //     "updatedBy.role": 1,
+  //     "updatedBy.name": 1,
+  //     "updatedBy.email": 1,
+  //     "updatedBy.avatar": 1,
+  //     category: 1,
+  //     comments: 1,
+  //   },
+  // });
 
   const post = await Post.aggregate(query);
 
