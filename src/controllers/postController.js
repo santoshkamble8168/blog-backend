@@ -108,11 +108,11 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res, next) => {
         from: "users",
         localField: "createdBy",
         foreignField: "_id",
-        as: "user",
+        as: "createdBy",
       },
     },
     {
-      $unwind: "$user",
+      $unwind: "$createdBy",
     }
   );
 
@@ -207,19 +207,21 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res, next) => {
       status: 1,
       featuredImage: 1,
       createdAt: 1,
-      "user._id": 1,
-      "user.role": 1,
-      "user.name": 1,
-      "user.email": 1,
-      "user.avatar": 1,
+      "createdBy._id": 1,
+      "createdBy.role": 1,
+      "createdBy.name": 1,
+      "createdBy.email": 1,
+      "createdBy.avatar": 1,
       "category._id": 1,
       "category.name": 1,
       "category.createdAt": 1,
       "category.slug": 1,
       "tags._id": 1,
-      "tags.tag":1,
-      "tags.slug":1,
+      "tags.tag": 1,
+      "tags.slug": 1,
       comments: { $size: { $ifNull: ["$commentId", []] } },
+      likes: { $size: { $ifNull: ["$likes", []] } },
+      bookmarks: { $size: { $ifNull: ["$bookmarks", []] } },
     },
   });
 
@@ -250,11 +252,16 @@ exports.getSinglePost = AsyncErrorHandler(async (req, res, next) => {
   if (!isPostExist) return next(new ErrorHandler(messages.post.notExist, 404));
 
   const query = [];
+  //find by id/slug
+  const slug_or_id = {}
+  if (isId) {
+    slug_or_id._id = mongoose.Types.ObjectId(id);
+  }else{
+    slug_or_id.slug = id
+  }
 
   query.push({
-    $match: {
-      _id: mongoose.Types.ObjectId(id),
-    },
+    $match: slug_or_id,
   });
 
   //lookup for users
@@ -396,5 +403,51 @@ exports.getSinglePost = AsyncErrorHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     item: post[0],
+  });
+});
+
+exports.likePost = AsyncErrorHandler(async (req, res, next) => {
+  const { error } = postValidation.likePost(req);
+  if (error) return next(new ErrorHandler(error.details, 409));
+
+  const id = req.params.id;
+  if (!id) return next(new ErrorHandler(messages.post.idNotProvided, 404));
+
+  const isExist = await Check.isExist(Post, id);
+  if (!isExist) return next(new ErrorHandler(messages.post.notExist, 404));
+
+  const { like } = req.body
+  const like_unlike = (like === true)
+      ? { $addToSet: { likes: req.user._id } }
+      : { $pull: { likes: req.user._id } };
+
+  const updatedPost = await Post.findByIdAndUpdate(id, like_unlike, { new: true });
+
+  res.status(200).json({
+    success: true,
+    message: like ? messages.post.liked : messages.post.unliked,
+  });
+});
+
+exports.bookmarkPost = AsyncErrorHandler(async (req, res, next) => {
+  const { error } = postValidation.bookmarkPost(req);
+  if (error) return next(new ErrorHandler(error.details, 409));
+
+  const id = req.params.id;
+  if (!id) return next(new ErrorHandler(messages.post.idNotProvided, 404));
+
+  const isExist = await Check.isExist(Post, id);
+  if (!isExist) return next(new ErrorHandler(messages.post.notExist, 404));
+
+  const { bookmark } = req.body;
+  const addRemoveBookmark = (bookmark === true)
+      ? { $addToSet: { bookmarks: req.user._id } }
+      : { $pull: { bookmarks: req.user._id } };
+
+  const updatedPost = await Post.findByIdAndUpdate(id, addRemoveBookmark, { new: true });
+
+  res.status(200).json({
+    success: true,
+    message: bookmark ? messages.post.bookmarked : messages.post.bookmarkRemoved,
   });
 });

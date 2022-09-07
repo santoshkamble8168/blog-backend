@@ -31,6 +31,10 @@ module.exports = {
     update: "post updated successfully!",
     delete: "post deleted successfully!",
     notAuthorized: "Not authorized to update this post",
+    liked: "The post has been liked",
+    unliked: "The post has been unliked",
+    bookmarked: "The post has been bookmarked",
+    bookmarkRemoved: "post  bookmark removed",
   },
   comment: {
     idNotProvided: "comment Id not provided",
