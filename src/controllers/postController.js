@@ -417,11 +417,11 @@ exports.likePost = AsyncErrorHandler(async (req, res, next) => {
   if (!isExist) return next(new ErrorHandler(messages.post.notExist, 404));
 
   const { like } = req.body
-  const like_unlike = (like === true)
+  const likeUnlike = (like === true)
       ? { $addToSet: { likes: req.user._id } }
       : { $pull: { likes: req.user._id } };
 
-  const updatedPost = await Post.findByIdAndUpdate(id, like_unlike, { new: true });
+  const updatedPost = await Post.findByIdAndUpdate(id, likeUnlike, { new: true });
 
   res.status(200).json({
     success: true,

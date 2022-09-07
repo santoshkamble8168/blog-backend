@@ -1,4 +1,4 @@
-const { User } = require("../models");
+const { User, Post } = require("../models");
 const { AsyncErrorHandler } = require("../middlewares");
 const { ErrorHandler, Check } = require("../utils");
 const { userValidation } = require("../validations");
@@ -199,6 +199,7 @@ exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
 });
 
 exports.getUser = AsyncErrorHandler(async (req, res, next) => {
+  console.log("getUser");
   const id = req.params.id;
   if (!id) return next(new ErrorHandler("User Id not provided", 404));
 
@@ -208,5 +209,195 @@ exports.getUser = AsyncErrorHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     item: user,
+  });
+});
+
+exports.getUserLikes = AsyncErrorHandler(async (req, res, next) => {
+  const query = [];
+
+  const userId = req.user._id;
+
+  query.push({
+    $sort: { createdAt : -1},
+  });
+
+  query.push({
+    $match: { likes: userId },
+  });
+
+  //lookup for users
+  query.push(
+    {
+      $lookup: {
+        from: "users",
+        localField: "createdBy",
+        foreignField: "_id",
+        as: "createdBy",
+      },
+    },
+    {
+      $unwind: "$createdBy",
+    }
+  );
+
+  //lookup for category
+  query.push({
+    $lookup: {
+      from: "categories",
+      localField: "categoryId",
+      foreignField: "_id",
+      as: "category",
+    },
+  });
+
+  //lookup for comments
+  query.push({
+    $lookup: {
+      from: "comments",
+      localField: "commentId",
+      foreignField: "_id",
+      as: "comments",
+    },
+  });
+
+  //lookup for comments
+  query.push({
+    $lookup: {
+      from: "tags",
+      localField: "tagId",
+      foreignField: "_id",
+      as: "tags",
+    },
+  });
+
+  //project
+  query.push({
+    $project: {
+      _id: 1,
+      slug: 1,
+      type: 1,
+      title: 1,
+      content: 1,
+      status: 1,
+      featuredImage: 1,
+      createdAt: 1,
+      "createdBy._id": 1,
+      "createdBy.role": 1,
+      "createdBy.name": 1,
+      "createdBy.email": 1,
+      "createdBy.avatar": 1,
+      "category._id": 1,
+      "category.name": 1,
+      "category.createdAt": 1,
+      "category.slug": 1,
+      "tags._id": 1,
+      "tags.tag": 1,
+      "tags.slug": 1,
+      comments: { $size: { $ifNull: ["$commentId", []] } },
+      likes: { $size: { $ifNull: ["$likes", []] } },
+      bookmarks: { $size: { $ifNull: ["$bookmarks", []] } },
+    },
+  });
+
+  const posts = await Post.aggregate(query);
+
+  res.status(200).json({
+    success: true,
+    item: posts,
+  });
+});
+
+exports.getUserBookmarks = AsyncErrorHandler(async (req, res, next) => {
+  const query = [];
+
+  const userId = req.user._id;
+
+  query.push({
+    $sort: { createdAt: -1 },
+  });
+
+  query.push({
+    $match: { bookmarks: userId },
+  });
+
+  //lookup for users
+  query.push(
+    {
+      $lookup: {
+        from: "users",
+        localField: "createdBy",
+        foreignField: "_id",
+        as: "createdBy",
+      },
+    },
+    {
+      $unwind: "$createdBy",
+    }
+  );
+
+  //lookup for category
+  query.push({
+    $lookup: {
+      from: "categories",
+      localField: "categoryId",
+      foreignField: "_id",
+      as: "category",
+    },
+  });
+
+  //lookup for comments
+  query.push({
+    $lookup: {
+      from: "comments",
+      localField: "commentId",
+      foreignField: "_id",
+      as: "comments",
+    },
+  });
+
+  //lookup for comments
+  query.push({
+    $lookup: {
+      from: "tags",
+      localField: "tagId",
+      foreignField: "_id",
+      as: "tags",
+    },
+  });
+
+  //project
+  query.push({
+    $project: {
+      _id: 1,
+      slug: 1,
+      type: 1,
+      title: 1,
+      content: 1,
+      status: 1,
+      featuredImage: 1,
+      createdAt: 1,
+      "createdBy._id": 1,
+      "createdBy.role": 1,
+      "createdBy.name": 1,
+      "createdBy.email": 1,
+      "createdBy.avatar": 1,
+      "category._id": 1,
+      "category.name": 1,
+      "category.createdAt": 1,
+      "category.slug": 1,
+      "tags._id": 1,
+      "tags.tag": 1,
+      "tags.slug": 1,
+      comments: { $size: { $ifNull: ["$commentId", []] } },
+      likes: { $size: { $ifNull: ["$likes", []] } },
+      bookmarks: { $size: { $ifNull: ["$bookmarks", []] } },
+    },
+  });
+
+  const posts = await Post.aggregate(query);
+
+  res.status(200).json({
+    success: true,
+    item: posts,
   });
 });
