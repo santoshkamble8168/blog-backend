@@ -5,5 +5,6 @@ router.use("/user", require("./userRoutes"))
 router.use("/post", require("./postRoutes"))
 router.use("/category", require("./categoryRoutes"))
 router.use("/comment", require("./commentRoutes"))
+router.use("/tags", require("./tagRoutes"))
 
 module.exports = router

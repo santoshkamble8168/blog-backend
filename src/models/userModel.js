@@ -3,7 +3,9 @@ const bcrypt = require("bcryptjs")
 const { userConfig } = require("../config");
 const crypto = require("crypto")
 const {tokens} = require("../utils")
+const slug = require("mongoose-slug-updater");
 
+mongoose.plugin(slug);
 const userSchema = new mongoose.Schema(
   {
     role: {
@@ -14,6 +16,12 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, "Please provide Name"],
+    },
+    slug: {
+      type: String,
+      require: true,
+      unique: true,
+      slug: "name",
     },
     email: {
       type: String,

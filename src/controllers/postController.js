@@ -18,6 +18,7 @@ exports.createPost = AsyncErrorHandler(async (req, res, next) => {
     content: req.body.content,
     categoryId: req.body.categoryId,
     createdBy: req.user._id,
+    tagId: req.body.tagId
   });
 
   const post = await newPost.save()
@@ -44,6 +45,7 @@ exports.updatePost = AsyncErrorHandler(async (req, res, next) => {
     description: req.body.description,
     content: req.body.content,
     categoryId: req.body.categoryId,
+    tagId: req.body.tagId,
     updatedBy: req.user._id,
   };
 
@@ -121,6 +123,16 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res, next) => {
       localField: "categoryId",
       foreignField: "_id",
       as: "category",
+    },
+  });
+
+  //lookup for tags
+  query.push({
+    $lookup: {
+      from: "tags",
+      localField: "tagId",
+      foreignField: "_id",
+      as: "tags",
     },
   });
 
@@ -204,7 +216,10 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res, next) => {
       "category.name": 1,
       "category.createdAt": 1,
       "category.slug": 1,
-      comments: { $size: {"$ifNull" : ["$commentId", []]} },
+      "tags._id": 1,
+      "tags.tag":1,
+      "tags.slug":1,
+      comments: { $size: { $ifNull: ["$commentId", []] } },
     },
   });
 
@@ -232,8 +247,7 @@ exports.getSinglePost = AsyncErrorHandler(async (req, res, next) => {
   const post_ID_Slug = isId ? id : { slug: id };
 
   const isPostExist = await Check.isExist(Post, post_ID_Slug);
-  if (!isPostExist)
-    return next(new ErrorHandler(messages.post.notExist, 404));
+  if (!isPostExist) return next(new ErrorHandler(messages.post.notExist, 404));
 
   const query = [];
 
@@ -293,6 +307,16 @@ exports.getSinglePost = AsyncErrorHandler(async (req, res, next) => {
       localField: "commentId",
       foreignField: "_id",
       as: "comments",
+    },
+  });
+
+  //lookup for comments
+  query.push({
+    $lookup: {
+      from: "tags",
+      localField: "tagId",
+      foreignField: "_id",
+      as: "tags",
     },
   });
 

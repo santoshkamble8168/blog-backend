@@ -176,6 +176,7 @@ exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
       role: 1,
       name: 1,
       email: 1,
+      slug: 1,
       avatar: 1,
       status: 1,
       createdAt: 1

@@ -40,4 +40,13 @@ module.exports = {
     delete: "comment deleted successfully!",
     notAuthorized: "Not authorized to update this comment",
   },
+  tag: {
+    alreadyExist: "tag already exist",
+    idNotProvided: "tag Id not provided",
+    notExist: "tag not exist",
+    create: "tag created successfully!",
+    update: "tag updated successfully!",
+    delete: "tag deleted successfully!",
+    notAuthorized: "Not authorized to update this tag",
+  },
 };
