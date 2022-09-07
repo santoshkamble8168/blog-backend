@@ -5,6 +5,7 @@ const { AuthMiddleware } = require("../middlewares")
 router.post("/", AuthMiddleware.verifyToken, createComment);
 router.put("/:postId", AuthMiddleware.verifyToken, updateComment);
 router.delete("/:id", AuthMiddleware.verifyToken, deleteComment);
-router.get("/:postId", AuthMiddleware.verifyToken, getAllComments);
+
+router.get("/:postId", getAllComments);
 
 module.exports = router

@@ -79,9 +79,14 @@ exports.deleteUser = AsyncErrorHandler(async (req, res, next) => {
   const user = await User.findById(id).select("+isDeleted");
   if (!user) return next(new ErrorHandler("user not found", 404));
 
-  user.isDeleted = true
+  //self or admin can delete the post
+  if (user._id.toString() !== req.user._id.toString() || !req.user?.isAdmin)
+    return next(new ErrorHandler(messages.user.notAuthorized, 401));
 
-  await user.save()
+  user.isDeleted = true;
+  //update all users post
+
+  await user.save();
 
   res.status(200).json({
     success: true,

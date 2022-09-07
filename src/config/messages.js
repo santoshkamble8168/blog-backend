@@ -5,6 +5,7 @@ module.exports = {
     update: "User updated successfully!",
     delete: "User deleted successfully!",
     passwordUpdate: "Password updated successfully!",
+    notAuthorized: "Not authorized to perform this action",
   },
   auth: {
     forgotPassword: "Your password reset token is",

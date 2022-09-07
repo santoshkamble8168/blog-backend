@@ -110,4 +110,21 @@ userSchema.pre("save", async function(next){
     this.verifyEmail = verifyEmail;
 })
 
-module.exports = mongoose.model("User", userSchema)
+const UserModel = mongoose.model("User", userSchema);
+
+UserModel.findOne({ role: "admin" }, function (err, found) {
+  if (!found) {
+    const user = new UserModel({
+      name: "Admin",
+      email: "admin@admin.com",
+      password: "password",
+      status: "active",
+      role: "admin"
+    });
+    user.save((rs) => {
+      console.log("ADMIN CREATED--------------------");
+    });
+  }
+});
+
+module.exports = UserModel

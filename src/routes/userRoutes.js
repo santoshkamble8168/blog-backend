@@ -3,9 +3,10 @@ const { createUser, updateUser, deleteUser, getAllUsers, getUser, updateUserPass
 const { AuthMiddleware } = require("../middlewares");
 
 router.post("/", createUser)
-router.put("/:id", updateUser);
-router.put("/update-password/:id", updateUserPassword)
-router.delete("/:id", deleteUser);
+
+router.put("/:id", AuthMiddleware.verifyToken, updateUser);
+router.put("/update-password/:id", AuthMiddleware.verifyToken, updateUserPassword);
+router.delete("/:id", AuthMiddleware.verifyToken, deleteUser);
 router.get("/", getAllUsers);
 router.get("/:id", getUser);
 router.get("/actions/likes", AuthMiddleware.verifyToken, getUserLikes);
