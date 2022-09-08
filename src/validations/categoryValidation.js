@@ -7,3 +7,11 @@ exports.createCategory = (req) => {
 
   return createCategorySchema.validate(req.body, { abortEarly: false });
 };
+
+exports.followCategory = (req) => {
+  const followCategorySchema = Joi.object({
+    following: Joi.boolean().required(),
+  });
+
+  return followCategorySchema.validate(req.body, { abortEarly: false });
+};

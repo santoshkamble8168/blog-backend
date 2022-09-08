@@ -1,12 +1,14 @@
-const routes = require("express").Router()
-const { createCategory, updateCategory, deleteCategory, getAllCategory, getSingleCategory } = require("../controllers/categoryController");
+const router = require("express").Router();
+const { createCategory, updateCategory, deleteCategory, getAllCategory, getSingleCategory, followCategory } = require("../controllers/categoryController");
 const { AuthMiddleware } = require("../middlewares");
 
-routes.post("/", AuthMiddleware.verifyToken, createCategory)
-routes.put("/:id", AuthMiddleware.verifyToken, updateCategory);
-routes.delete("/:id", AuthMiddleware.verifyToken, deleteCategory);
+router.post("/", AuthMiddleware.Authentication, createCategory);
+router.put("/:id", AuthMiddleware.Authentication, updateCategory);
+router.delete("/:id", AuthMiddleware.Authentication, deleteCategory);
 
-routes.get("/", getAllCategory);
-routes.get("/:id", getSingleCategory);
+router.get("/", getAllCategory);
+router.get("/:id", getSingleCategory);
 
-module.exports = routes
+router.put("/follow/:id", AuthMiddleware.Authentication, followCategory);
+
+module.exports = router;

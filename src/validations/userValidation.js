@@ -18,3 +18,12 @@ exports.userLogin = (req) => {
 
     return loginSchema.validate(req.body, {abortEarly: false})
 }
+
+
+exports.followUser = (req) => {
+  const followUserSchema = Joi.object({
+    following: Joi.boolean().required(),
+  });
+
+  return followUserSchema.validate(req.body, { abortEarly: false });
+};

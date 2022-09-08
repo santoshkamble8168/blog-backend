@@ -6,6 +6,11 @@ module.exports = {
     delete: "User deleted successfully!",
     passwordUpdate: "Password updated successfully!",
     notAuthorized: "Not authorized to perform this action",
+    followed: "The user has been followed",
+    unfollowed: "The user has been unfollowed",
+    idNotProvided: "user Id not provided",
+    notExist: "user not exist",
+    selfFollowError: "you can't follow yourself",
   },
   auth: {
     forgotPassword: "Your password reset token is",
@@ -22,6 +27,8 @@ module.exports = {
     notExist: "Category not exist",
     update: "category updated successfully!",
     delete: "category deleted successfully!",
+    followed: "The category has been followed",
+    unfollowed: "The category has been unfollowed",
   },
   post: {
     titleExist: "Title already exist",
@@ -53,5 +60,7 @@ module.exports = {
     update: "tag updated successfully!",
     delete: "tag deleted successfully!",
     notAuthorized: "Not authorized to update this tag",
+    followed: "The tag has been followed",
+    unfollowed: "The tag has been unfollowed",
   },
 };

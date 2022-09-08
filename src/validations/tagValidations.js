@@ -7,3 +7,11 @@ exports.createTag = (req) => {
 
   return createTagSchema.validate(req.body, { abortEarly: false });
 };
+
+exports.followTag = (req) => {
+  const followTagSchema = Joi.object({
+    following: Joi.boolean().required(),
+  });
+
+  return followTagSchema.validate(req.body, { abortEarly: false });
+};

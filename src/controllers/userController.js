@@ -32,7 +32,8 @@ exports.updateUser = AsyncErrorHandler(async (req, res, next) => {
     name: req.body.name,
     role: req.body.role,
     avatar: req.body.avatar,
-    status: req.body.status
+    status: req.body.status,
+    social: req.body.social
   };
 
   const updateUser = await User.findOneAndUpdate(
@@ -186,7 +187,8 @@ exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
       slug: 1,
       avatar: 1,
       status: 1,
-      createdAt: 1
+      createdAt: 1,
+      followed: { $size: { $ifNull: ["$following", []] } },
     },
   });
   const users = await User.aggregate(query);
@@ -206,12 +208,22 @@ exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
 });
 
 exports.getUser = AsyncErrorHandler(async (req, res, next) => {
-  console.log("getUser");
   const id = req.params.id;
-  if (!id) return next(new ErrorHandler("User Id not provided", 404));
+  if (!id) return next(new ErrorHandler(messages.user.idNotProvided, 404));
 
   const user = await Check.isExist(User, id);
-  if (!user) return next(new ErrorHandler("user not found", 404));
+  if (!user) return next(new ErrorHandler(messages.user.notExist, 404));
+
+  res.status(200).json({
+    success: true,
+    item: user,
+  });
+});
+
+//get loggedin profile
+exports.getProfile = AsyncErrorHandler(async (req, res, next) => {
+  console.log("getProfile");
+  const user = req.user
 
   res.status(200).json({
     success: true,
@@ -406,5 +418,34 @@ exports.getUserBookmarks = AsyncErrorHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     item: posts,
+  });
+});
+
+exports.followUser = AsyncErrorHandler(async (req, res, next) => {
+  const { error } = userValidation.followUser(req);
+  if (error) return next(new ErrorHandler(error.details, 409));
+
+  const id = req.params.id;
+  if (!id) return next(new ErrorHandler(messages.user.idNotProvided, 404));
+
+  const isExist = await Check.isExist(User, id);
+  if (!isExist) return next(new ErrorHandler(messages.user.notExist, 404));
+
+  if(isExist._id.toString() === req.user._id.toString())
+    return next(new ErrorHandler(messages.user.selfFollowError, 409));
+
+  const { following } = req.body;
+  const followUnfollow =
+    following === true
+      ? { $addToSet: { following: req.user._id } }
+      : { $pull: { following: req.user._id } };
+
+  const updateduser = await User.findByIdAndUpdate(id, followUnfollow, {
+    new: true,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: following ? messages.user.followed : messages.user.unfollowed,
   });
 });

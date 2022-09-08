@@ -320,6 +320,24 @@ exports.getSinglePost = AsyncErrorHandler(async (req, res, next) => {
     },
   });
 
+  /**
+   * localField: "comments.createdBy",
+      foreignField: "_id",
+      as: "comm",
+   * */
+  // query.push({
+  //   $lookup: {
+  //     from: "users",
+  //     let: { createdBy : {$toString: "$_id"}},
+  //     pipeline: [
+  //       {
+  //         $match: {$expr: {$eq: ["$createdBy", "$$createdBy"]}}
+  //       }
+  //     ],
+  //     as: "data"
+  //   },
+  // });
+
   //lookup for comments
   query.push({
     $lookup: {
