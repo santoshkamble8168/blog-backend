@@ -1,6 +1,6 @@
 const {Post, Comment} = require("../models")
 const {AsyncErrorHandler} = require("../middlewares")
-const {ErrorHandler, Check} = require("../utils");
+const {ErrorHandler, Check, time} = require("../utils");
 const { postValidation } = require("../validations");
 const { default: mongoose } = require("mongoose");
 const {config, messages} = require("../config")
@@ -18,7 +18,8 @@ exports.createPost = AsyncErrorHandler(async (req, res, next) => {
     content: req.body.content,
     categoryId: req.body.categoryId,
     createdBy: req.user._id,
-    tagId: req.body.tagId
+    tagId: req.body.tagId,
+    readTime: time.getReadTime(req.body.content),
   });
 
   const post = await newPost.save()
@@ -47,6 +48,7 @@ exports.updatePost = AsyncErrorHandler(async (req, res, next) => {
     categoryId: req.body.categoryId,
     tagId: req.body.tagId,
     updatedBy: req.user._id,
+    readTime: time.getReadTime(req.body.content),
   };
 
   const updatedPost = await Post.findByIdAndUpdate(
@@ -207,6 +209,7 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res, next) => {
       status: 1,
       featuredImage: 1,
       createdAt: 1,
+      readTime: 1,
       "createdBy._id": 1,
       "createdBy.role": 1,
       "createdBy.name": 1,

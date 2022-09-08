@@ -84,7 +84,9 @@ exports.deleteUser = AsyncErrorHandler(async (req, res, next) => {
     return next(new ErrorHandler(messages.user.notAuthorized, 401));
 
   user.isDeleted = true;
-  //update all users post
+  /*here we done soft delete so, 
+    if any post releated to this user will still visible,
+    but user is no longer able to login*/
 
   await user.save();
 

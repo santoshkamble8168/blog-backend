@@ -28,6 +28,9 @@ const postSchema = new mongoose.Schema(
       type: String,
       required: [true, "Please provide the content"],
     },
+    readTime: {
+      type: String,
+    },
     status: {
       type: String,
       default: postConfig.status[0],
