@@ -125,6 +125,81 @@ exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
       isDeleted: false,
     },
   });
+
+  // query.push({
+  //   $lookup: {
+  //     from: "follows",
+  //     localField: "_id",
+  //     foreignField: "userId",
+  //     as: "following",
+  //   },
+  // });
+
+  query.push(
+    {
+      $lookup: {
+        from: "follows",
+        localField: "_id",
+        foreignField: "followable_id",
+        as: "followings",
+      },
+    },
+    {
+      $unwind: {
+        path: "$followings",
+        preserveNullAndEmptyArrays: true,
+      },
+    }
+  );
+
+  /*query.push({
+    $lookup: {
+      from: "follows",
+      let: {
+        user_id: "$_id",
+      },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                { $eq: ["$userId", "$$user_id"] },
+                { $eq: ["$type", "user"] },
+              ],
+            },
+          },
+        },
+      ],
+      as: "following",
+    },
+  });*/
+
+
+  // query.push({
+  //   $lookup: {
+  //     from: "follows",
+  //     let: { userIds: { $toString: "$_id" } },
+  //     pipeline: [{ $match: { $expr: { $eq: ["$userId", "$$userIds"] } } }],
+  //     as: "follw",
+  //   },
+  // });
+
+  /*query.push({
+    $lookup: {
+      from: "follows",
+      let: { planIdInPlan: "$_id" },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $eq: ["$userId", "$$planIdInPlan"],
+            },
+          },
+        },
+      ],
+      as: "feedback",
+    },
+  });*/
   
   if (search && search !== "") {
     query.push({
@@ -188,7 +263,8 @@ exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
       avatar: 1,
       status: 1,
       createdAt: 1,
-      followed: { $size: { $ifNull: ["$following", []] } },
+      //followed: { $size: { $ifNull: ["$following", []] } },
+      followed: { $size: { $ifNull: ["$followings.userId", []] } },
     },
   });
   const users = await User.aggregate(query);
