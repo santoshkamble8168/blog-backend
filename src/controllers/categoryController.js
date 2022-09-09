@@ -120,7 +120,7 @@ exports.getAllCategory = AsyncErrorHandler(async (req, res, next) => {
               $expr: {
                 $and: [
                   { $eq: ["$followable_id", "$$cat_id"] },
-                  { $eq: ["$type", followConfig.followTypes[1]] },
+                  { $eq: ["$type", followConfig.types[1]] },
                 ],
               },
             },

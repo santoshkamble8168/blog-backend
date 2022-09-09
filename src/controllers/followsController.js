@@ -55,7 +55,6 @@ exports.getFollowMeta = AsyncErrorHandler(async (req, res, next) => {
     if (!isExist) return next(new ErrorHandler("followable_id not found", 404));
 
     const query = []
-    
 
     query.push({
       $match: {

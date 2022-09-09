@@ -4,5 +4,6 @@ module.exports = {
   Category: require("./categoryModel"),
   Comment: require("./commentModel"),
   Tag: require("./tagModel"),
-  Follows: require("./followsModel")
+  Follows: require("./followsModel"),
+  Reactions: require("./reactionsModel")
 };

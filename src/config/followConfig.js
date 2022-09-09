@@ -1,3 +1,3 @@
 module.exports = {
-    followTypes: ["user", "category", "tag"]
+    types: ["user", "category", "tag"]
 }
