@@ -32,6 +32,4 @@ router.get(
   getUserBookmarks
 );
 
-router.put("/follow/:id", AuthMiddleware.Authentication, followUser);
-
 module.exports = router

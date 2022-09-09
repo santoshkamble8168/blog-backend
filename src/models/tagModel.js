@@ -20,12 +20,6 @@ const tagsSchema = new mongoose.Schema({
   image: {
     type: String,
   },
-  following: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-  ],
 }, {
   timestamps: true
 });

@@ -78,12 +78,6 @@ const userSchema = new mongoose.Schema(
       default: false,
       select: false,
     },
-    following: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
   },
   {
     timestamps: true,

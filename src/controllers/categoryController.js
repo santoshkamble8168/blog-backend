@@ -96,12 +96,12 @@ exports.getAllCategory = AsyncErrorHandler(async (req, res, next) => {
         from: "follows",
         localField: "_id",
         foreignField: "followable_id",
-        as: "followings",
+        as: "followed",
       },
     },
     {
       $unwind: {
-        path: "$followings",
+        path: "$followed",
         preserveNullAndEmptyArrays: true,
       },
     }
@@ -145,7 +145,7 @@ exports.getAllCategory = AsyncErrorHandler(async (req, res, next) => {
       createdAt: 1,
       //following: 1,//no need to show users list here
       //followed: { $size: { $ifNull: ["$following", []] } },
-      followed: { $size: { $ifNull: ["$followings.userId", []] } },
+      followed: { $size: { $ifNull: ["$followed.userId", []] } },
     },
   });
   const categories = await Category.aggregate(query);
@@ -174,31 +174,5 @@ exports.getSingleCategory = AsyncErrorHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     item: category,
-  });
-});
-
-exports.followCategory = AsyncErrorHandler(async (req, res, next) => {
-  const { error } = categoryValidation.followCategory(req);
-  if (error) return next(new ErrorHandler(error.details, 409));
-
-  const id = req.params.id;
-  if (!id) return next(new ErrorHandler(messages.category.idNotProvided, 404));
-
-  const isExist = await Check.isExist(Category, id);
-  if (!isExist) return next(new ErrorHandler(messages.post.notExist, 404));
-
-  const { following } = req.body;
-  const followUnfollow =
-    following === true
-      ? { $addToSet: { following: req.user._id } }
-      : { $pull: { following: req.user._id } };
-
-  const updatedCategory = await Category.findByIdAndUpdate(id, followUnfollow, {
-    new: true,
-  });
-
-  res.status(200).json({
-    success: true,
-    message: following ? messages.category.followed : messages.category.unfollowed,
   });
 });
