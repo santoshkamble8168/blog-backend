@@ -9,6 +9,4 @@ router.delete("/:id", AuthMiddleware.Authentication, deleteCategory);
 router.get("/", getAllCategory);
 router.get("/:id", getSingleCategory);
 
-router.put("/follow/:id", AuthMiddleware.Authentication, followCategory);
-
 module.exports = router;

@@ -90,6 +90,23 @@ exports.getAllTags = AsyncErrorHandler(async (req, res, next) => {
 //     },
 //   });
 
+  query.push(
+    {
+      $lookup: {
+        from: "follows",
+        localField: "_id",
+        foreignField: "followable_id",
+        as: "followed",
+      },
+    },
+    {
+      $unwind: {
+        path: "$followed",
+        preserveNullAndEmptyArrays: true,
+      },
+    }
+  );
+
   //project
   query.push({
     $project: {
@@ -97,7 +114,8 @@ exports.getAllTags = AsyncErrorHandler(async (req, res, next) => {
       slug: 1,
       tag: 1,
       image: 1,
-      followed: { $size: { $ifNull: ["$following", []] } },
+      //followed: { $size: { $ifNull: ["$following", []] } },
+      followed: { $size: { $ifNull: ["$followed.userId", []] } },
     },
   });
 
@@ -114,31 +132,5 @@ exports.getAllTags = AsyncErrorHandler(async (req, res, next) => {
         totalPages: Math.ceil(total / limit),
       },
     },
-  });
-});
-
-exports.followTag = AsyncErrorHandler(async (req, res, next) => {
-  const { error } = tagValidation.followTag(req);
-  if (error) return next(new ErrorHandler(error.details, 409));
-
-  const id = req.params.id;
-  if (!id) return next(new ErrorHandler(messages.tag.idNotProvided, 404));
-
-  const isExist = await Check.isExist(Tag, id);
-  if (!isExist) return next(new ErrorHandler(messages.tag.notExist, 404));
-
-  const { following } = req.body;
-  const followUnfollow =
-    following === true
-      ? { $addToSet: { following: req.user._id } }
-      : { $pull: { following: req.user._id } };
-
-  const updatedTag = await Tag.findByIdAndUpdate(id, followUnfollow, {
-    new: true,
-  });
-
-  res.status(200).json({
-    success: true,
-    message: following ? messages.tag.followed : messages.tag.unfollowed,
   });
 });

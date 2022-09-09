@@ -2,7 +2,7 @@ const { Category } = require("../models");
 const { AsyncErrorHandler } = require("../middlewares");
 const { categoryValidation } = require("../validations");
 const { ErrorHandler, Check } = require("../utils");
-const { messages, config } = require("../config");
+const { messages, config, followConfig } = require("../config");
 
 exports.createCategory = AsyncErrorHandler(async (req, res, next) => {
   const { name } = req.body;
@@ -90,6 +90,53 @@ exports.getAllCategory = AsyncErrorHandler(async (req, res, next) => {
     $limit: limit,
   });
 
+  query.push(
+    {
+      $lookup: {
+        from: "follows",
+        localField: "_id",
+        foreignField: "followable_id",
+        as: "followed",
+      },
+    },
+    {
+      $unwind: {
+        path: "$followed",
+        preserveNullAndEmptyArrays: true,
+      },
+    }
+  );
+
+  /*query.push(
+    {
+      $lookup: {
+        from: "follows",
+        let: {
+          cat_id: "$_id",
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$followable_id", "$$cat_id"] },
+                  { $eq: ["$type", followConfig.followTypes[1]] },
+                ],
+              },
+            },
+          },
+        ],
+        as: "followings",
+      },
+    },
+    {
+      $unwind: {
+        path: "$followings",
+        preserveNullAndEmptyArrays: true,
+      },
+    }
+  );*/
+
   //project
   query.push({
     $project: {
@@ -97,7 +144,8 @@ exports.getAllCategory = AsyncErrorHandler(async (req, res, next) => {
       name: 1,
       createdAt: 1,
       //following: 1,//no need to show users list here
-      followed: { $size: { $ifNull: ["$following", []] } },
+      //followed: { $size: { $ifNull: ["$following", []] } },
+      followed: { $size: { $ifNull: ["$followed.userId", []] } },
     },
   });
   const categories = await Category.aggregate(query);
@@ -126,31 +174,5 @@ exports.getSingleCategory = AsyncErrorHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     item: category,
-  });
-});
-
-exports.followCategory = AsyncErrorHandler(async (req, res, next) => {
-  const { error } = categoryValidation.followCategory(req);
-  if (error) return next(new ErrorHandler(error.details, 409));
-
-  const id = req.params.id;
-  if (!id) return next(new ErrorHandler(messages.category.idNotProvided, 404));
-
-  const isExist = await Check.isExist(Category, id);
-  if (!isExist) return next(new ErrorHandler(messages.post.notExist, 404));
-
-  const { following } = req.body;
-  const followUnfollow =
-    following === true
-      ? { $addToSet: { following: req.user._id } }
-      : { $pull: { following: req.user._id } };
-
-  const updatedCategory = await Category.findByIdAndUpdate(id, followUnfollow, {
-    new: true,
-  });
-
-  res.status(200).json({
-    success: true,
-    message: following ? messages.category.followed : messages.category.unfollowed,
   });
 });

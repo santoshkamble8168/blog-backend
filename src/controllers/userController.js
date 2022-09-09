@@ -125,6 +125,81 @@ exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
       isDeleted: false,
     },
   });
+
+  // query.push({
+  //   $lookup: {
+  //     from: "follows",
+  //     localField: "_id",
+  //     foreignField: "userId",
+  //     as: "following",
+  //   },
+  // });
+
+  query.push(
+    {
+      $lookup: {
+        from: "follows",
+        localField: "_id",
+        foreignField: "followable_id",
+        as: "followed",
+      },
+    },
+    {
+      $unwind: {
+        path: "$followed",
+        preserveNullAndEmptyArrays: true,
+      },
+    }
+  );
+
+  /*query.push({
+    $lookup: {
+      from: "follows",
+      let: {
+        user_id: "$_id",
+      },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                { $eq: ["$userId", "$$user_id"] },
+                { $eq: ["$type", "user"] },
+              ],
+            },
+          },
+        },
+      ],
+      as: "following",
+    },
+  });*/
+
+
+  // query.push({
+  //   $lookup: {
+  //     from: "follows",
+  //     let: { userIds: { $toString: "$_id" } },
+  //     pipeline: [{ $match: { $expr: { $eq: ["$userId", "$$userIds"] } } }],
+  //     as: "follw",
+  //   },
+  // });
+
+  /*query.push({
+    $lookup: {
+      from: "follows",
+      let: { planIdInPlan: "$_id" },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $eq: ["$userId", "$$planIdInPlan"],
+            },
+          },
+        },
+      ],
+      as: "feedback",
+    },
+  });*/
   
   if (search && search !== "") {
     query.push({
@@ -188,7 +263,8 @@ exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
       avatar: 1,
       status: 1,
       createdAt: 1,
-      followed: { $size: { $ifNull: ["$following", []] } },
+      //followed: { $size: { $ifNull: ["$following", []] } },
+      followed: { $size: { $ifNull: ["$followed.userId", []] } },
     },
   });
   const users = await User.aggregate(query);
@@ -222,7 +298,6 @@ exports.getUser = AsyncErrorHandler(async (req, res, next) => {
 
 //get loggedin profile
 exports.getProfile = AsyncErrorHandler(async (req, res, next) => {
-  console.log("getProfile");
   const user = req.user
 
   res.status(200).json({
@@ -418,34 +493,5 @@ exports.getUserBookmarks = AsyncErrorHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     item: posts,
-  });
-});
-
-exports.followUser = AsyncErrorHandler(async (req, res, next) => {
-  const { error } = userValidation.followUser(req);
-  if (error) return next(new ErrorHandler(error.details, 409));
-
-  const id = req.params.id;
-  if (!id) return next(new ErrorHandler(messages.user.idNotProvided, 404));
-
-  const isExist = await Check.isExist(User, id);
-  if (!isExist) return next(new ErrorHandler(messages.user.notExist, 404));
-
-  if(isExist._id.toString() === req.user._id.toString())
-    return next(new ErrorHandler(messages.user.selfFollowError, 409));
-
-  const { following } = req.body;
-  const followUnfollow =
-    following === true
-      ? { $addToSet: { following: req.user._id } }
-      : { $pull: { following: req.user._id } };
-
-  const updateduser = await User.findByIdAndUpdate(id, followUnfollow, {
-    new: true,
-  });
-
-  res.status(200).json({
-    success: true,
-    message: following ? messages.user.followed : messages.user.unfollowed,
   });
 });

@@ -3,5 +3,6 @@ module.exports = {
     dbConnect: require("./db"),
     postConfig: require("./postConfigs"),
     userConfig: require("./userConfig"),
-    messages: require("./messages")
+    messages: require("./messages"),
+    followConfig: require("./followConfig")
 }
