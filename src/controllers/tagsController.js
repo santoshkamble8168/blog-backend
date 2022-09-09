@@ -90,6 +90,23 @@ exports.getAllTags = AsyncErrorHandler(async (req, res, next) => {
 //     },
 //   });
 
+  query.push(
+    {
+      $lookup: {
+        from: "follows",
+        localField: "_id",
+        foreignField: "followable_id",
+        as: "followed",
+      },
+    },
+    {
+      $unwind: {
+        path: "$followed",
+        preserveNullAndEmptyArrays: true,
+      },
+    }
+  );
+
   //project
   query.push({
     $project: {
@@ -97,7 +114,8 @@ exports.getAllTags = AsyncErrorHandler(async (req, res, next) => {
       slug: 1,
       tag: 1,
       image: 1,
-      followed: { $size: { $ifNull: ["$following", []] } },
+      //followed: { $size: { $ifNull: ["$following", []] } },
+      followed: { $size: { $ifNull: ["$followed.userId", []] } },
     },
   });
 

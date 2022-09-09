@@ -1,8 +1,9 @@
 const router = require("express").Router()
-const { registerFollow } = require("../controllers/followsController")
+const { registerFollowUnfollow, getFollowMeta } = require("../controllers/followsController");
 const { AuthMiddleware } = require("../middlewares")
 
 
-router.post("/", AuthMiddleware.Authentication, registerFollow)
+router.post("/", AuthMiddleware.Authentication, registerFollowUnfollow);
+router.get("/:id", getFollowMeta);
 
 module.exports = router

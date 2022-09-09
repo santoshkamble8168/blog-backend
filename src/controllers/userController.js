@@ -141,12 +141,12 @@ exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
         from: "follows",
         localField: "_id",
         foreignField: "followable_id",
-        as: "followings",
+        as: "followed",
       },
     },
     {
       $unwind: {
-        path: "$followings",
+        path: "$followed",
         preserveNullAndEmptyArrays: true,
       },
     }
@@ -264,7 +264,7 @@ exports.getAllUsers = AsyncErrorHandler(async (req, res) => {
       status: 1,
       createdAt: 1,
       //followed: { $size: { $ifNull: ["$following", []] } },
-      followed: { $size: { $ifNull: ["$followings.userId", []] } },
+      followed: { $size: { $ifNull: ["$followed.userId", []] } },
     },
   });
   const users = await User.aggregate(query);

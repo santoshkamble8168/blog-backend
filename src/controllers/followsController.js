@@ -5,7 +5,7 @@ const { ErrorHandler, Check } = require("../utils");
 const { postValidation } = require("../validations");
 const { config, messages } = require("../config");
 
-exports.registerFollow = AsyncErrorHandler(async (req, res, next) => {
+exports.registerFollowUnfollow = AsyncErrorHandler(async (req, res, next) => {
   const follow = await Check.isExist(Follows, {
     followable_id: req.body.followable_id,
     type: req.body.type,
@@ -46,3 +46,49 @@ exports.registerFollow = AsyncErrorHandler(async (req, res, next) => {
     message: message,
   });
 });
+
+exports.getFollowMeta = AsyncErrorHandler(async (req, res, next) => {
+    const id = req.params.id;
+    if (!id) return next(new ErrorHandler("followable_id not provided", 404));
+
+    const isExist = await Check.isExist(Follows, { followable_id : id});
+    if (!isExist) return next(new ErrorHandler("followable_id not found", 404));
+
+    const query = []
+    
+
+    query.push({
+      $match: {
+        followable_id: mongoose.Types.ObjectId(id)
+      },
+    });
+
+    query.push({
+      $lookup: {
+        from: "users",
+        localField: "userId",
+        foreignField: "_id",
+        as: "users"
+      },
+    });
+
+    query.push({
+      $project: {
+        _id: 1,
+        type: 1,
+        followed: { $size: { $ifNull: ["$users", []] } },
+        "users._id": 1,
+        "users.name": 1,
+        "users.email": 1,
+        "users.avatar": 1,
+        "users.slug": 1,
+      },
+    });
+
+    const follow = await Follows.aggregate(query)
+
+    res.status(200).json({
+      success: true,
+      item: follow,
+    });
+})
