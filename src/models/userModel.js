@@ -13,6 +13,11 @@ const userSchema = new mongoose.Schema(
       default: userConfig.roles[0],
       enum: userConfig.roles,
     },
+    userName: {
+      type: String,
+      required: [true, "Please provide a user name"],
+      unique: true,
+    },
     name: {
       type: String,
       required: [true, "Please provide Name"],
@@ -21,7 +26,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       require: true,
       unique: true,
-      slug: "name",
+      slug: "userName",
     },
     email: {
       type: String,

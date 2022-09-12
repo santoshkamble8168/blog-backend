@@ -22,8 +22,8 @@ router.put(
   updateUserPassword
 );
 router.delete("/:id", AuthMiddleware.Authentication, deleteUser);
-router.get("/", AuthMiddleware.Authentication, getAllUsers);
-router.get("/:id", AuthMiddleware.Authentication, getUser);
+router.get("/", getAllUsers);
+router.get("/:id", getUser);
 router.get("/profile/me", AuthMiddleware.Authentication, getProfile);
 router.get("/actions/likes", AuthMiddleware.Authentication, getUserLikes);
 router.get(
