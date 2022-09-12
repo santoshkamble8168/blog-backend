@@ -12,6 +12,12 @@ exports.Authentication = AsyncErrorHandler(async (req, res, next) => {
 
   const decodedToken = tokens.decodeJwtToken(token);
 
+  if (!decodedToken) {
+    return next(
+      new ErrorHandler("Your JWT token has expired.Please login again", 401)
+    );
+  }
+
   req.user = await User.findById(decodedToken._id);
 
   //check is admin
@@ -39,4 +45,29 @@ exports.Authorization = AsyncErrorHandler(async (req, res, next) => {
   // }
 
   // next();
+});
+
+exports.publicAuthentication = AsyncErrorHandler(async (req, res, next) => {
+  const { token } = req.cookies;
+
+  if (!token) {
+    return next();
+  }
+
+  const decodedToken = tokens.decodeJwtToken(token);
+
+  if (!decodedToken) {
+    return next(
+      new ErrorHandler("Your JWT token has expired.Please login again", 401)
+    );
+  }
+
+  req.user = await User.findById(decodedToken._id);
+
+  //check is admin
+  if (req.user.role === userConfig.roles[1]) {
+    req.user.isAdmin = true;
+  }
+
+  next();
 });

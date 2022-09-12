@@ -16,6 +16,7 @@ const commentSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "Please provide user id"],
     },
+    reply: []
   },
   {
     timestamps: true,

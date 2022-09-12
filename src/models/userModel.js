@@ -1,6 +1,6 @@
 const { default: mongoose } = require("mongoose");
 const bcrypt = require("bcryptjs")
-const { userConfig } = require("../config");
+const { userConfig, notificationConfig } = require("../config");
 const crypto = require("crypto")
 const {tokens} = require("../utils")
 const slug = require("mongoose-slug-updater");
@@ -60,6 +60,29 @@ const userSchema = new mongoose.Schema(
         media: { type: String },
         url: { type: String },
         handle: { type: String },
+      },
+    ],
+    notifications: [
+      {
+        type: {
+          type: String,
+          enum: notificationConfig.reactions,
+        },
+        message: {
+          type: String,
+        },
+        createdAt: {
+          type: Date,
+        },
+        read: {
+          type: Boolean,
+          default: false,
+        },
+        user: {
+          name: String,
+          slug: String,
+          avatar: String,
+        },
       },
     ],
     lastLogin: {

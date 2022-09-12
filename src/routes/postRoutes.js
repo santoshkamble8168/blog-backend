@@ -6,7 +6,7 @@ router.post("/", AuthMiddleware.Authentication, createPost);
 router.put("/:id", AuthMiddleware.Authentication, updatePost);
 router.delete("/:id", AuthMiddleware.Authentication, deletePost);
 
-router.get("/", getAllPosts)
+router.get("/", AuthMiddleware.publicAuthentication, getAllPosts);
 router.get("/:id", getSinglePost)
 
 router.put("/like/:id", AuthMiddleware.Authentication, likePost);

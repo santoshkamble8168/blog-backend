@@ -1,9 +1,9 @@
-const {Post, Comment} = require("../models")
+const {Post, Comment, User} = require("../models")
 const {AsyncErrorHandler} = require("../middlewares")
 const {ErrorHandler, Check, time} = require("../utils");
 const { postValidation } = require("../validations");
 const { default: mongoose } = require("mongoose");
-const {config, messages} = require("../config")
+const {config, messages, postConfig, notificationConfig} = require("../config")
 
 exports.createPost = AsyncErrorHandler(async (req, res, next) => {
   const { error } = postValidation.createPost(req);
@@ -198,6 +198,57 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res, next) => {
     $limit: limit,
   });
 
+  //  query.push({
+  //    $addFields: {
+  //      liked: { $eq: ["likes", mongoose.Types.ObjectId(req.user._id)] },
+  //      //bookmarked: { $sum: "$quiz" }
+  //    },
+  //  });
+
+  //  query.push({
+  //    $addFields: {
+  //      liked: {
+  //        $cond: {
+  //          if: {
+  //            $eq: ["$likes", mongoose.Types.ObjectId(req.user._id)],
+  //          },
+  //          then: 1,
+  //          else: 0,
+  //        },
+  //      },
+  //    },
+  //  });
+
+  // query.push({
+  //   $addFields: {
+  //     liked: {
+  //       $cond: [
+  //         { $in: [mongoose.Types.ObjectId(req.user._id), "$likes"] },
+  //         true,
+  //         false,
+  //       ],
+  //     },
+  //   },
+  // });
+
+  let liked, bookmarked
+  if (req?.user?._id) {
+    liked = {
+        $cond: [
+          { $in: [mongoose.Types.ObjectId(req.user._id), "$likes"] },
+          true,
+          false,
+        ],
+      }
+    bookmarked = {
+        $cond: [
+          { $in: [mongoose.Types.ObjectId(req.user._id), "$bookmarks"] },
+          true,
+          false,
+        ],
+      }
+    }
+
   //project
   query.push({
     $project: {
@@ -225,6 +276,21 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res, next) => {
       comments: { $size: { $ifNull: ["$commentId", []] } },
       likes: { $size: { $ifNull: ["$likes", []] } },
       bookmarks: { $size: { $ifNull: ["$bookmarks", []] } },
+      liked,
+      bookmarked
+      // liked: 1
+      
+      //liked: 1
+      /*liked: {
+        $filter: {
+          input: "$likes",
+          as: "youLiked",
+          $cond: {
+            $eq: ["$youLiked", mongoose.Types.ObjectId(req.user_id)],
+          },
+        },
+      },*/
+      // liked: { $in: mongoose.Types.ObjectId(req.user_id) },
     },
   });
 
@@ -434,8 +500,8 @@ exports.likePost = AsyncErrorHandler(async (req, res, next) => {
   const id = req.params.id;
   if (!id) return next(new ErrorHandler(messages.post.idNotProvided, 404));
 
-  const isExist = await Check.isExist(Post, id);
-  if (!isExist) return next(new ErrorHandler(messages.post.notExist, 404));
+  const post = await Check.isExist(Post, id);
+  if (!post) return next(new ErrorHandler(messages.post.notExist, 404));
 
   const { like } = req.body
   const likeUnlike = (like === true)
@@ -443,6 +509,25 @@ exports.likePost = AsyncErrorHandler(async (req, res, next) => {
       : { $pull: { likes: req.user._id } };
 
   const updatedPost = await Post.findByIdAndUpdate(id, likeUnlike, { new: true });
+
+  //notification to post user/author
+  const notifyUser = await User.updateOne(
+    { _id: post.createdBy },
+    {
+      $push: {
+        notifications: {
+          type: notificationConfig.reactions[0], //like
+          message: `${req.user.name} ${like ? "liked" : "unliked"} your post.`,
+          user: {
+            name: req.user.name,
+            slug: req.user.slug,
+            avatar: req.user.avatar,
+          },
+          createdAt: new Date().getTime(),
+        },
+      },
+    }
+  );
 
   res.status(200).json({
     success: true,
@@ -457,18 +542,44 @@ exports.bookmarkPost = AsyncErrorHandler(async (req, res, next) => {
   const id = req.params.id;
   if (!id) return next(new ErrorHandler(messages.post.idNotProvided, 404));
 
-  const isExist = await Check.isExist(Post, id);
-  if (!isExist) return next(new ErrorHandler(messages.post.notExist, 404));
+  const post = await Check.isExist(Post, id);
+  if (!post) return next(new ErrorHandler(messages.post.notExist, 404));
 
   const { bookmark } = req.body;
-  const addRemoveBookmark = (bookmark === true)
+  const addRemoveBookmark =
+    bookmark === true
       ? { $addToSet: { bookmarks: req.user._id } }
       : { $pull: { bookmarks: req.user._id } };
 
-  const updatedPost = await Post.findByIdAndUpdate(id, addRemoveBookmark, { new: true });
+  const updatedPost = await Post.findByIdAndUpdate(id, addRemoveBookmark, {
+    new: true,
+  });
+
+  //notification to post user/author
+  const notifyUser = await User.updateOne(
+    { _id: post.createdBy },
+    {
+      $push: {
+        notifications: {
+          type: notificationConfig.reactions[1], //bookmark
+          message: `${req.user.name} ${
+            bookmark ? "bookmarked" : "unbookmark"
+          } your post.`,
+          user: {
+            name: req.user.name,
+            slug: req.user.slug,
+            avatar: req.user.avatar,
+          },
+          createdAt: new Date().getTime(),
+        },
+      },
+    }
+  );
 
   res.status(200).json({
     success: true,
-    message: bookmark ? messages.post.bookmarked : messages.post.bookmarkRemoved,
+    message: bookmark
+      ? messages.post.bookmarked
+      : messages.post.bookmarkRemoved,
   });
 });

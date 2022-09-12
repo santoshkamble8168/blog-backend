@@ -3,6 +3,7 @@ const { AsyncErrorHandler } = require("../middlewares");
 const { ErrorHandler, Check } = require("../utils");
 const { userValidation } = require("../validations");
 const { messages, userConfig, config } = require("../config");
+const { default: mongoose } = require("mongoose");
 
 exports.createUser = AsyncErrorHandler(async (req, res, next) => {
   const { error } = userValidation.createUser(req);
@@ -493,5 +494,31 @@ exports.getUserBookmarks = AsyncErrorHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     item: posts,
+  });
+});
+
+exports.notificationRead = AsyncErrorHandler(async (req, res, next) => {
+  const id = req.params.id;
+  if (!id) return next(new ErrorHandler("Notification Id not provided", 404));
+
+  const notification = await Check.isExist(User, {
+    _id: req.user._id,
+    "notifications._id": mongoose.Types.ObjectId(id),
+  });
+  if (!notification) return next(new ErrorHandler("Notification not found", 404));
+
+  //update notification status to read=true
+  const updateNotification = await User.updateOne(
+    { _id: req.user._id, "notifications._id": mongoose.Types.ObjectId(id) },
+    {
+      $set: {
+        "notifications.$.read": true,
+      },
+    }
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Notitification marked as read",
   });
 });

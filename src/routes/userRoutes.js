@@ -9,7 +9,8 @@ const {
   getUserLikes, 
   getUserBookmarks, 
   getProfile, 
-  followUser 
+  followUser, 
+  notificationRead
 } = require("../controllers/userController");
 const { AuthMiddleware } = require("../middlewares");
 
@@ -30,6 +31,11 @@ router.get(
   "/actions/bookmarks",
   AuthMiddleware.Authentication,
   getUserBookmarks
+);
+router.put(
+  "/notification/:id",
+  AuthMiddleware.Authentication,
+  notificationRead
 );
 
 module.exports = router

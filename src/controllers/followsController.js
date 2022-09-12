@@ -1,9 +1,9 @@
 const { default: mongoose } = require("mongoose");
-const { Follows } = require("../models");
+const { Follows, User } = require("../models");
 const { AsyncErrorHandler } = require("../middlewares");
 const { ErrorHandler, Check } = require("../utils");
 const { postValidation } = require("../validations");
-const { config, messages } = require("../config");
+const { config, messages, notificationConfig } = require("../config");
 
 exports.registerFollowUnfollow = AsyncErrorHandler(async (req, res, next) => {
   const follow = await Check.isExist(Follows, {
@@ -14,9 +14,9 @@ exports.registerFollowUnfollow = AsyncErrorHandler(async (req, res, next) => {
   let message = `The ${req.body.type} has been`
   if (follow) {
     const isExist = await Check.isExist(Follows, {
-        followable_id: req.body.followable_id,
-        type: req.body.type,
-        userId: req.user._id,
+      followable_id: req.body.followable_id,
+      type: req.body.type,
+      userId: req.user._id,
     });
 
     const followUnfollow = isExist
@@ -30,15 +30,60 @@ exports.registerFollowUnfollow = AsyncErrorHandler(async (req, res, next) => {
         new: true,
       }
     );
+
+    if (req.body.type === "user" && req.user._id !== req.body.followable_id) {
+      //notification to post user/author
+      const notifyUser = await User.updateOne(
+        { _id: req.body.followable_id },
+        {
+          $push: {
+            notifications: {
+              type: notificationConfig.reactions[3], //follow
+              message: `${req.user.name} has been ${
+                isExist ? "unfolowed" : "folowed"
+              } you`,
+              user: {
+                name: req.user.name,
+                slug: req.user.slug,
+                avatar: req.user.avatar,
+              },
+              createdAt: new Date().getTime(),
+            },
+          },
+        }
+      );
+    }
+
     message = isExist ? `${message} unfollowed` : `${message} followed`;
   } else {
-    newFollow = new Follows({
+    let newFollow = new Follows({
       type: req.body.type,
       followable_id: req.body.followable_id,
       userId: [req.user._id],
     });
     const follows = await newFollow.save();
     message = message + " followed (new)"
+
+    if (req.body.type === "user" && req.user._id !== req.body.followable_id) {
+      //notification to post user/author
+      const notifyUser = await User.updateOne(
+        { _id: req.body.followable_id },
+        {
+          $push: {
+            notifications: {
+              type: notificationConfig.reactions[3], //follow
+              message: `${req.user.name} has been folowed you`,
+              user: {
+                name: req.user.name,
+                slug: req.user.slug,
+                avatar: req.user.avatar,
+              },
+              createdAt: new Date().getTime(),
+            },
+          },
+        }
+      );
+    }
   }
 
   res.status(200).json({
