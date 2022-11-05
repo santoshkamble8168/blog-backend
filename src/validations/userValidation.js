@@ -2,6 +2,7 @@ const Joi = require("joi")
 
 exports.createUser = (req) => {
     const createUserSchema = Joi.object({
+        userName: Joi.string().required(),
         name: Joi.string().required(),
         email: Joi.string().email().required(),
         password: Joi.string().min(8).required()
