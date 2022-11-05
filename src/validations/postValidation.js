@@ -4,6 +4,7 @@ exports.createPost = (req) => {
   const createPostSchema = Joi.object({
     title: Joi.string().required(),
     content: Joi.string().required(),
+    description: Joi.string(),
     categoryId: Joi.array().items(Joi.string().required()),
     tagId: Joi.array().items(Joi.string()),
   });
