@@ -6,7 +6,7 @@ exports.createPost = (req) => {
     content: Joi.string().required(),
     description: Joi.string(),
     categoryId: Joi.array().items(Joi.string().required()),
-    tagId: Joi.array().items(Joi.string()),
+    //tagId: Joi.array().items(Joi.string()),
   });
 
   return createPostSchema.validate(req.body, { abortEarly: false });
