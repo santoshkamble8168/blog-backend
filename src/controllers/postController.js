@@ -48,8 +48,12 @@ exports.updatePost = AsyncErrorHandler(async (req, res, next) => {
     categoryId: req.body.categoryId,
     tagId: req.body.tagId,
     updatedBy: req.user._id,
-    readTime: time.getReadTime(req.body.content),
+    //readTime: time.getReadTime(req.body.content),
   };
+  
+  if (req.body.content) {
+    updatePostFields["readTime"] = time.getReadTime(req.body.content)
+  }
 
   const updatedPost = await Post.findByIdAndUpdate(
     id,
