@@ -143,6 +143,7 @@ exports.getAllCategory = AsyncErrorHandler(async (req, res, next) => {
       _id: 1,
       name: 1,
       createdAt: 1,
+      slug: 1,
       //following: 1,//no need to show users list here
       //followed: { $size: { $ifNull: ["$following", []] } },
       followed: { $size: { $ifNull: ["$followed.userId", []] } },
@@ -150,16 +151,16 @@ exports.getAllCategory = AsyncErrorHandler(async (req, res, next) => {
   });
   const categories = await Category.aggregate(query);
 
-  res.status(200).json({
+ res.status(200).json({
     success: true,
-    item: {
-      categories,
-      meta: {
+    data: categories,
+    meta: {
+      pagination: {
         total: total,
         currentPage: page,
         perPage: limit,
         totalPages: Math.ceil(total / limit),
-      },
+      }
     },
   });
 });
@@ -173,6 +174,6 @@ exports.getSingleCategory = AsyncErrorHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    item: category,
+    data: category,
   });
 });
