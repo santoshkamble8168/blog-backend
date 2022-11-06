@@ -257,6 +257,7 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res, next) => {
       type: 1,
       title: 1,
       content: 1,
+      description: 1,
       status: 1,
       featuredImage: 1,
       createdAt: 1,
@@ -298,14 +299,14 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    item: {
-      posts,
-      meta: {
+    data: posts,
+    meta: {
+      pagination: {
         total: total,
         currentPage: page,
         perPage: limit,
         totalPages: Math.ceil(total / limit),
-      },
+      }
     },
   });
 });
@@ -489,7 +490,7 @@ exports.getSinglePost = AsyncErrorHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    item: post[0],
+    data: post[0],
   });
 });
 
