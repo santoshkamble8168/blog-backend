@@ -271,6 +271,7 @@ exports.getAllPosts = AsyncErrorHandler(async (req, res, next) => {
       "createdBy.name": 1,
       "createdBy.email": 1,
       "createdBy.avatar": 1,
+      "createdBy.slug": 1,
       "category._id": 1,
       "category.name": 1,
       "category.createdAt": 1,
